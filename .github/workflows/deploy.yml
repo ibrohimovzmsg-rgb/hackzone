@@ -13,7 +13,7 @@ jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -28,13 +28,14 @@ jobs:
 
       - name: Sync source code to VPS
         run: |
-          rsync -avz --delete \
+          rsync -az --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             --exclude='.git' \
             --exclude='.claude' \
             --exclude='**/bin/' \
             --exclude='**/obj/' \
             --exclude='**/.vs/' \
+            --exclude='src/HackZone.Web/wwwroot/lib/' \
             ./ ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.DEPLOY_PATH }}/
 
       - name: Build and restart containers
