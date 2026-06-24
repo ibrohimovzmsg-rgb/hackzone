@@ -54,6 +54,12 @@ jobs:
             echo "Restarting services..."
             docker compose up -d --no-deps hackzone-api hackzone-web
 
+            echo "Waiting for services to start..."
+            sleep 15
+
+            echo "Reloading nginx..."
+            docker exec hackzone-nginx nginx -s reload
+
             echo "Cleaning up old images..."
             docker image prune -f
 
