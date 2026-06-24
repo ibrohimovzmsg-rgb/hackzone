@@ -2,7 +2,7 @@
 
 public record CourseListItem(Guid Id, string Title, string Description, string Slug,
     string Difficulty, string Category, string? ThumbnailUrl,
-    int LessonCount, bool IsEnrolled, int ProgressPercent);
+    int LessonCount, bool IsEnrolled, int ProgressPercent, int EnrollmentCount);
 
 public record CourseDetail(Guid Id, string Title, string Description, string Difficulty,
     string Category, string? ThumbnailUrl, List<LessonItem> Lessons,

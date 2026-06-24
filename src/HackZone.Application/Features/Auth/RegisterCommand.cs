@@ -55,22 +55,17 @@ public class RegisterHandler(IUnitOfWork uow, IJwtService jwt, IEmailService ema
         try { await email.SendConfirmationEmailAsync(user.Email, user.Username, token, ct); }
         catch { /* email yuborish ixtiyoriy */ }
 
-        return BuildAuthResponse(user, jwt, ["Student"]);
-    }
-
-    internal static AuthResponse BuildAuthResponse(User user, IJwtService jwt, string[] roles)
-    {
-        var accessToken = jwt.GenerateAccessToken(user, roles);
+        var accessToken = jwt.GenerateAccessToken(user, ["Student"]);
         var (refreshToken, expiresAt) = jwt.GenerateRefreshToken();
-
         var rt = RefreshToken.Create(user.Id, refreshToken, expiresAt);
-        user.AddRefreshToken(rt);
+        await uow.RefreshTokens.AddAsync(rt, ct);
+        await uow.SaveChangesAsync(ct);
 
         return new AuthResponse(
             new TokenResponse(accessToken, refreshToken, expiresAt),
             new UserProfileResponse(
                 user.Id, user.Username, user.Email, user.DisplayName,
                 user.AvatarUrl, user.Bio, user.Country,
-                user.ReputationPoints, user.EmailConfirmed, roles, user.CreatedAt));
+                user.ReputationPoints, user.EmailConfirmed, ["Student"], user.CreatedAt));
     }
 }

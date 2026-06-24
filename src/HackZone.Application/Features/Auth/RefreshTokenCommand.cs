@@ -20,7 +20,6 @@ public class RefreshTokenHandler(IUnitOfWork uow, IJwtService jwt) : IRequestHan
 
         var user = await uow.Users.Query()
             .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
-            .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Id == rt.UserId, ct)
             ?? throw new UnauthorizedException("Foydalanuvchi topilmadi.");
 
@@ -31,7 +30,7 @@ public class RefreshTokenHandler(IUnitOfWork uow, IJwtService jwt) : IRequestHan
         var (newRefresh, expiresAt) = jwt.GenerateRefreshToken();
 
         var newRt = RefreshToken.Create(user.Id, newRefresh, expiresAt);
-        user.AddRefreshToken(newRt);
+        await uow.RefreshTokens.AddAsync(newRt, ct);
         await uow.SaveChangesAsync(ct);
 
         return new TokenResponse(accessToken, newRefresh, expiresAt);

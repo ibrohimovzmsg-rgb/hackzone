@@ -21,6 +21,7 @@ public class GetCoursesHandler(IUnitOfWork uow, ICurrentUserService currentUser)
 
         var courses = await uow.Courses.Query()
             .Include(c => c.Lessons)
+            .Include(c => c.Enrollments)
             .Where(c => c.IsPublished)
             .OrderBy(c => c.OrderIndex)
             .ToListAsync(ct);
@@ -33,7 +34,8 @@ public class GetCoursesHandler(IUnitOfWork uow, ICurrentUserService currentUser)
                 c.Difficulty.ToString(), c.Category, c.ThumbnailUrl,
                 c.Lessons.Count(l => l.IsPublished),
                 enrollment != null,
-                enrollment?.ProgressPercent ?? 0);
+                enrollment?.ProgressPercent ?? 0,
+                c.Enrollments.Count);
         }).ToList();
     }
 }

@@ -9,7 +9,13 @@ public record AdminUser(Guid Id, string Username, string Email, string Status, i
 public record CertItem(Guid Id, string CourseTitle, string Code, DateTime IssuedAt);
 
 public record CourseItem(Guid Id, string Title, string Slug, string Description, string Difficulty,
-    int LessonCount, int EnrollmentCount);
+    int LessonCount, bool IsEnrolled, int ProgressPercent, int EnrollmentCount);
+public record LessonListItem(Guid Id, string Title, int OrderIndex, int DurationMinutes, bool IsCompleted);
+public record CourseDetailItem(Guid Id, string Title, string Description, string Difficulty,
+    string Category, string? ThumbnailUrl, List<LessonListItem> Lessons,
+    bool IsEnrolled, int ProgressPercent);
+public record LessonDetailItem(Guid Id, string Title, string Content, string? VideoUrl,
+    int OrderIndex, int DurationMinutes, bool IsCompleted);
 
 public record ChallengeItem(Guid Id, string Title, string Description, string Category, string Difficulty,
     int Points, bool IsSolved, int SolveCount);
