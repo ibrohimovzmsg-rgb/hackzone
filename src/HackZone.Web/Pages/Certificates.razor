@@ -1,0 +1,53 @@
+﻿@page "/certificates"
+@inject ApiService Api
+@inject AppState State
+@inject NavigationManager Nav
+@using HackZone.Web.Services
+
+<PageTitle>Sertifikatlarim - HackZone</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    @if (!State.IsAuthenticated) { Nav.NavigateTo("/login"); return; }
+
+    <MudText Typo="Typo.h4" Class="hz-green mb-6">&gt; Sertifikatlarim</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Color="Color.Success" Indeterminate="true" />
+    }
+    else if (_certs?.Count > 0)
+    {
+        <MudGrid Spacing="3">
+            @foreach (var cert in _certs)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Class="hz-card hz-cert-card">
+                        <MudCardContent>
+                            <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Warning" Size="Size.Large" />
+                            <MudText Typo="Typo.h6" Class="mt-2">@cert.CourseTitle</MudText>
+                            <MudText Class="hz-green font-mono mt-1">@cert.Code</MudText>
+                            <MudText Class="hz-muted mt-1">@cert.IssuedAt.ToString("dd.MM.yyyy")</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">
+            Hali sertifikat yo'\''q. <MudLink Href="/courses" Color="Color.Success">Kurs boshlang!</MudLink>
+        </MudAlert>
+    }
+</MudContainer>
+
+@code {
+    private List<CertItem>? _certs;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _certs = await Api.GetAsync<List<CertItem>>("api/certificates");
+        _loading = false;
+    }
+}

@@ -1,0 +1,56 @@
+﻿@page "/register"
+@inject AuthService AuthSvc
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@using HackZone.Web.Services
+
+<PageTitle>Ro'\''yxatdan O'\''tish - HackZone</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudCard Class="hz-auth-card">
+        <MudCardHeader>
+            <MudText Typo="Typo.h4" Class="hz-green text-center w-full">
+                <span>&gt;_</span> Ro'\''yxatdan O'\''tish
+            </MudText>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTextField @bind-Value="_username" Label="Foydalanuvchi nomi" Required="true"
+                Variant="Variant.Outlined" Class="mb-4" FullWidth="true"
+                Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person" />
+            <MudTextField @bind-Value="_email" Label="Email" InputType="InputType.Email" Required="true"
+                Variant="Variant.Outlined" Class="mb-4" FullWidth="true"
+                Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email" />
+            <MudTextField @bind-Value="_password" Label="Parol" InputType="InputType.Password" Required="true"
+                Variant="Variant.Outlined" Class="mb-4" FullWidth="true" HelperText="Kamida 8 belgi, katta harf, raqam"
+                Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+            }
+            <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Success"
+                Size="Size.Large" OnClick="HandleRegister" Disabled="_loading">
+                @if (_loading) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                Ro'\''yxatdan O'\''tish
+            </MudButton>
+        </MudCardContent>
+        <MudCardActions Class="justify-center">
+            <MudText>Hisobingiz bormi? <MudLink Href="/login" Color="Color.Success">Kiring</MudLink></MudText>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string _username = "", _email = "", _password = "";
+    private string? _error;
+    private bool _loading;
+
+    private async Task HandleRegister()
+    {
+        _loading = true;
+        _error = null;
+        var (ok, err) = await AuthSvc.RegisterAsync(_username, _email, _password);
+        _loading = false;
+        if (ok) { Snackbar.Add("Xush kelibsiz! Emailingizni tasdiqlang.", Severity.Success); Nav.NavigateTo("/"); }
+        else _error = err ?? "Xato yuz berdi";
+    }
+}

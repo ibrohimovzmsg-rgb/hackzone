@@ -1,0 +1,118 @@
+﻿@page "/forum"
+@inject ApiService Api
+@inject AppState State
+@inject ISnackbar Snackbar
+@using HackZone.Web.Services
+
+<PageTitle>Forum - HackZone</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
+        <MudText Typo="Typo.h4" Class="hz-green">&gt; Forum</MudText>
+        <MudSpacer />
+        @if (State.IsAuthenticated)
+        {
+            <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="() => _newPostOpen = true"
+                StartIcon="@Icons.Material.Filled.Add">Yangi post</MudButton>
+        }
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="3">
+            <MudCard Class="hz-card">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-3">Kategoriyalar</MudText>
+                    <MudList T="ForumCat" Dense="true">
+                        <MudListItem T="ForumCat" OnClick="() => _selectedCat = null" Class="@(_selectedCat == null ? "hz-selected" : "")">
+                            Barchasi
+                        </MudListItem>
+                        @foreach (var cat in _categories ?? [])
+                        {
+                            <MudListItem T="ForumCat" OnClick="() => SelectCategory(cat)" Class="@(_selectedCat?.Id == cat.Id ? "hz-selected" : "")">
+                                @cat.Name
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="9">
+            @if (_loadingPosts)
+            {
+                <MudProgressLinear Color="Color.Success" Indeterminate="true" />
+            }
+            else
+            {
+                @foreach (var p in _posts ?? [])
+                {
+                    <MudCard Class="hz-card mb-3" @onclick='() => Nav.NavigateTo($"/forum/{p.Id}")'>
+                        <MudCardContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudIcon Icon="@Icons.Material.Filled.Forum" Color="Color.Success" />
+                                <div class="flex-grow-1 ml-2">
+                                    <MudText Typo="Typo.subtitle1">@p.Title</MudText>
+                                    <MudStack Row="true" Spacing="2" Class="mt-1">
+                                        <MudText Class="hz-muted text-sm">@p.AuthorUsername</MudText>
+                                        <MudText Class="hz-muted text-sm">@p.CreatedAt.ToString("dd.MM.yyyy")</MudText>
+                                        <MudChip T="string" Size="Size.Small">@p.ReplyCount javob</MudChip>
+                                    </MudStack>
+                                </div>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                }
+            }
+        </MudItem>
+    </MudGrid>
+
+    <MudDialog @bind-IsVisible="_newPostOpen">
+        <TitleContent><MudText Typo="Typo.h6" Class="hz-green">Yangi post</MudText></TitleContent>
+        <DialogContent>
+            <MudSelect @bind-Value="_postCatId" Label="Kategoriya" Variant="Variant.Outlined" Class="mb-3" FullWidth="true">
+                @foreach (var cat in _categories ?? [])
+                {
+                    <MudSelectItem Value="cat.Id">@cat.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_postTitle" Label="Sarlavha" Variant="Variant.Outlined" Class="mb-3" FullWidth="true" />
+            <MudTextField @bind-Value="_postContent" Label="Mazmun" Variant="Variant.Outlined" FullWidth="true" Lines="5" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="() => _newPostOpen = false">Bekor</MudButton>
+            <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="CreatePost">Joylash</MudButton>
+        </DialogActions>
+    </MudDialog>
+</MudContainer>
+
+@code {
+    [Inject] NavigationManager Nav { get; set; } = default!;
+    private List<ForumCat>? _categories;
+    private List<ForumPostItem>? _posts;
+    private ForumCat? _selectedCat;
+    private bool _loadingPosts = true, _newPostOpen;
+    private Guid _postCatId;
+    private string _postTitle = "", _postContent = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await Api.GetAsync<List<ForumCat>>("api/forum/categories");
+        await LoadPosts();
+    }
+
+    private async Task SelectCategory(ForumCat cat) { _selectedCat = cat; await LoadPosts(); }
+
+    private async Task LoadPosts()
+    {
+        _loadingPosts = true;
+        var url = _selectedCat is null ? "api/forum/posts" : $"api/forum/posts?categoryId={_selectedCat.Id}";
+        _posts = await Api.GetAsync<List<ForumPostItem>>(url);
+        _loadingPosts = false;
+    }
+
+    private async Task CreatePost()
+    {
+        var (ok, err) = await Api.PostAsync("api/forum/posts", new { categoryId = _postCatId, title = _postTitle, content = _postContent, type = "Discussion" });
+        if (ok) { Snackbar.Add("Post joylashtirildi.", Severity.Success); _newPostOpen = false; await LoadPosts(); }
+        else Snackbar.Add(err ?? "Xato", Severity.Error);
+    }
+}

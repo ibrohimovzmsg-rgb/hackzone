@@ -1,0 +1,132 @@
+﻿@page "/"
+@inject AppState State
+@inject NavigationManager Nav
+@using HackZone.Web.Services
+
+<PageTitle>HackZone Cyber Academy - Kibersecurity Ta'\''limi</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="hz-hero">
+    <MudGrid Justify="Justify.Center" Class="mt-8">
+        <MudItem xs="12" Class="text-center">
+            <MudText Typo="Typo.h1" Class="hz-title">
+                <span class="hz-green">&gt;</span> HACKZONE
+            </MudText>
+            <MudText Typo="Typo.h4" Class="hz-subtitle mt-2">
+                Cyber Security Academy
+            </MudText>
+            <MudText Typo="Typo.body1" Class="hz-description mt-4">
+                Amaliy laboratoriyalar, CTF musobaqalar va kurslar orqali kibersecurity sohasini o'\''rganing
+            </MudText>
+            <MudStack Row="true" Justify="Justify.Center" Class="mt-8" Spacing="3">
+                @if (!State.IsAuthenticated)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large"
+                        Href="/register" StartIcon="@Icons.Material.Filled.RocketLaunch">
+                        Boshlash
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Large"
+                        Href="/ctf" StartIcon="@Icons.Material.Filled.Flag">
+                        CTF Ko'\''rish
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large"
+                        Href="/courses" StartIcon="@Icons.Material.Filled.School">
+                        Kurslarim
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Large"
+                        Href="/labs" StartIcon="@Icons.Material.Filled.Computer">
+                        Laboratoriya
+                    </MudButton>
+                }
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Class="mt-16" Spacing="4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="hz-stat-card">
+                <MudCardContent Class="text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.School" Color="Color.Success" Size="Size.Large" />
+                    <MudText Typo="Typo.h4" Class="hz-green mt-2">50+</MudText>
+                    <MudText>Kurslar</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="hz-stat-card">
+                <MudCardContent Class="text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Flag" Color="Color.Success" Size="Size.Large" />
+                    <MudText Typo="Typo.h4" Class="hz-green mt-2">100+</MudText>
+                    <MudText>CTF Topshiriqlar</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="hz-stat-card">
+                <MudCardContent Class="text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Computer" Color="Color.Success" Size="Size.Large" />
+                    <MudText Typo="Typo.h4" Class="hz-green mt-2">30+</MudText>
+                    <MudText>Laboratoriyalar</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="hz-stat-card">
+                <MudCardContent Class="text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Success" Size="Size.Large" />
+                    <MudText Typo="Typo.h4" Class="hz-green mt-2">1000+</MudText>
+                    <MudText>Talabalar</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Class="mt-12" Spacing="4">
+        <MudItem xs="12" md="4">
+            <MudCard Class="hz-feature-card">
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.Computer" Color="Color.Success" Class="mb-3" />
+                    <MudText Typo="Typo.h5">Amaliy Laboratoriyalar</MudText>
+                    <MudText Class="mt-2 hz-muted">
+                        Docker konteynerlarda haqiqiy zaifliklarni toping va exploit qiling
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="/labs" Color="Color.Success" Variant="Variant.Text">Ko'\''rish</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Class="hz-feature-card">
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.Flag" Color="Color.Success" Class="mb-3" />
+                    <MudText Typo="Typo.h5">CTF Musobaqalar</MudText>
+                    <MudText Class="mt-2 hz-muted">
+                        Web, Crypto, Pwn, Forensics va boshqa yo'\''nalishlarda musobaqa
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="/ctf" Color="Color.Success" Variant="Variant.Text">Ko'\''rish</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudCard Class="hz-feature-card">
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Success" Class="mb-3" />
+                    <MudText Typo="Typo.h5">Sertifikatlar</MudText>
+                    <MudText Class="mt-2 hz-muted">
+                        Kurslarni tugatgandan so'\''ng rasmiy sertifikat oling
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="/courses" Color="Color.Success" Variant="Variant.Text">Ko'\''rish</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code { }

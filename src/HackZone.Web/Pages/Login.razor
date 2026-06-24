@@ -1,0 +1,56 @@
+﻿@page "/login"
+@inject AuthService AuthSvc
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@using HackZone.Web.Services
+
+<PageTitle>Kirish - HackZone</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudCard Class="hz-auth-card">
+        <MudCardHeader>
+            <MudText Typo="Typo.h4" Class="hz-green text-center w-full">
+                <span>&gt;_</span> Kirish
+            </MudText>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudForm @ref="_form">
+                <MudTextField @bind-Value="_email" Label="Email" InputType="InputType.Email"
+                    Required="true" Variant="Variant.Outlined" Class="mb-4" FullWidth="true"
+                    Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email" />
+                <MudTextField @bind-Value="_password" Label="Parol" InputType="InputType.Password"
+                    Required="true" Variant="Variant.Outlined" Class="mb-4" FullWidth="true"
+                    Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" />
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+                }
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Success"
+                    Size="Size.Large" OnClick="HandleLogin" Disabled="_loading">
+                    @if (_loading) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                    Kirish
+                </MudButton>
+            </MudForm>
+        </MudCardContent>
+        <MudCardActions Class="justify-center">
+            <MudText>Hisobingiz yo'\''qmi? <MudLink Href="/register" Color="Color.Success">Ro'\''yxatdan o'\''ting</MudLink></MudText>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private MudForm _form = default!;
+    private string _email = "", _password = "";
+    private string? _error;
+    private bool _loading;
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        _error = null;
+        var (ok, err) = await AuthSvc.LoginAsync(_email, _password);
+        _loading = false;
+        if (ok) { Snackbar.Add("Xush kelibsiz!", Severity.Success); Nav.NavigateTo("/"); }
+        else _error = err ?? "Kirish xatosi";
+    }
+}

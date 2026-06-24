@@ -1,0 +1,93 @@
+﻿@page "/admin"
+@inject ApiService Api
+@inject AppState State
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@using HackZone.Web.Services
+
+<PageTitle>Admin Panel - HackZone</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+    @if (!State.IsAdmin) { Nav.NavigateTo("/"); return; }
+
+    <MudText Typo="Typo.h4" Class="hz-green mb-6">&gt; Admin Panel</MudText>
+
+    @if (_stats is not null)
+    {
+        <MudGrid Spacing="3" Class="mb-6">
+            <MudItem xs="6" md="3">
+                <MudCard Class="hz-stat-card">
+                    <MudCardContent Class="text-center">
+                        <MudText Typo="Typo.h4" Class="hz-green">@_stats.TotalUsers</MudText>
+                        <MudText>Foydalanuvchilar</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="6" md="3">
+                <MudCard Class="hz-stat-card">
+                    <MudCardContent Class="text-center">
+                        <MudText Typo="Typo.h4" Class="hz-green">@_stats.TotalCourses</MudText>
+                        <MudText>Kurslar</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="6" md="3">
+                <MudCard Class="hz-stat-card">
+                    <MudCardContent Class="text-center">
+                        <MudText Typo="Typo.h4" Class="hz-green">@_stats.TotalChallenges</MudText>
+                        <MudText>CTF Topshiriqlar</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="6" md="3">
+                <MudCard Class="hz-stat-card">
+                    <MudCardContent Class="text-center">
+                        <MudText Typo="Typo.h4" Class="hz-green">@_stats.ActiveLabs</MudText>
+                        <MudText>Aktiv Lablar</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    }
+
+    <MudText Typo="Typo.h5" Class="hz-green mb-4">Foydalanuvchilar</MudText>
+    <MudTable Items="_users" Hover="true" Class="hz-table">
+        <HeaderContent>
+            <MudTh>Username</MudTh>
+            <MudTh>Email</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Ball</MudTh>
+            <MudTh>Amallar</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="u">
+            <MudTd>@u.Username</MudTd>
+            <MudTd>@u.Email</MudTd>
+            <MudTd><MudChip T="string" Color="@(u.Status == "Active" ? Color.Success : Color.Error)" Size="Size.Small">@u.Status</MudChip></MudTd>
+            <MudTd>@u.ReputationPoints</MudTd>
+            <MudTd>
+                @if (u.Status == "Active")
+                {
+                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined" OnClick="() => BanUser(u.Id)">Ban</MudButton>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudContainer>
+
+@code {
+    private DashboardStats? _stats;
+    private List<AdminUser>? _users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stats = await Api.GetAsync<DashboardStats>("api/admin/dashboard");
+        _users = await Api.GetAsync<List<AdminUser>>("api/admin/users");
+    }
+
+    private async Task BanUser(Guid id)
+    {
+        var (ok, err) = await Api.PostAsync($"api/admin/users/{id}/ban", new { reason = "Admin ban" });
+        if (ok) { Snackbar.Add("Ban qilindi.", Severity.Success); await OnInitializedAsync(); }
+        else Snackbar.Add(err ?? "Xato", Severity.Error);
+    }
+}

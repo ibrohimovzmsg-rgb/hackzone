@@ -1,0 +1,98 @@
+﻿@page "/ctf"
+@inject ApiService Api
+@inject AppState State
+@inject ISnackbar Snackbar
+@using HackZone.Web.Services
+
+<PageTitle>CTF Musobaqalar - HackZone</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
+        <MudText Typo="Typo.h4" Class="hz-green">&gt; CTF Musobaqalar</MudText>
+        <MudSpacer />
+        <MudButton Href="/leaderboard" Color="Color.Success" Variant="Variant.Outlined"
+            StartIcon="@Icons.Material.Filled.Leaderboard">Reyting</MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Color="Color.Success" Indeterminate="true" />
+    }
+    else
+    {
+        <MudGrid Spacing="3">
+            @foreach (var ch in _challenges ?? [])
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Class="@($"hz-card hz-challenge {(ch.IsSolved ? "hz-solved" : "")}")">
+                        <MudCardContent>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                <MudChip T="string" Color="GetCatColor(ch.Category)" Size="Size.Small">@ch.Category</MudChip>
+                                <MudChip T="string" Color="GetDiffColor(ch.Difficulty)" Size="Size.Small">@ch.Difficulty</MudChip>
+                            </MudStack>
+                            <MudText Typo="Typo.h6" Class="mt-2">@ch.Title</MudText>
+                            <MudText Class="hz-muted mt-1">@ch.Description</MudText>
+                            <MudStack Row="true" Class="mt-3" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                <MudText Class="hz-green font-bold">@ch.Points ball</MudText>
+                                @if (ch.IsSolved)
+                                {
+                                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">Hal qilindi</MudChip>
+                                }
+                                else if (State.IsAuthenticated)
+                                {
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Success"
+                                        OnClick="() => OpenSubmit(ch.Id, ch.Title)">Flag topshirish</MudButton>
+                                }
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    <MudDialog @bind-IsVisible="_dialogOpen">
+        <TitleContent>
+            <MudText Typo="Typo.h6" Class="hz-green">Flag topshirish: @_selectedTitle</MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudTextField @bind-Value="_flag" Label="Flag (HZ{...})" Variant="Variant.Outlined"
+                FullWidth="true" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Flag" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="() => _dialogOpen = false">Bekor</MudButton>
+            <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="SubmitFlag" Disabled="_submitting">
+                @if (_submitting) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                Topshirish
+            </MudButton>
+        </DialogActions>
+    </MudDialog>
+</MudContainer>
+
+@code {
+    private List<ChallengeItem>? _challenges;
+    private bool _loading = true, _dialogOpen, _submitting;
+    private Guid _selectedId;
+    private string _selectedTitle = "", _flag = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _challenges = await Api.GetAsync<List<ChallengeItem>>("api/ctf/challenges");
+        _loading = false;
+    }
+
+    private void OpenSubmit(Guid id, string title) { _selectedId = id; _selectedTitle = title; _flag = ""; _dialogOpen = true; }
+
+    private async Task SubmitFlag()
+    {
+        _submitting = true;
+        var (ok, data, err) = await Api.PostAsync<FlagResult>($"api/ctf/challenges/{_selectedId}/submit", new { flag = _flag });
+        _submitting = false;
+        if (!ok) { Snackbar.Add(err ?? "Xato", Severity.Error); return; }
+        if (data?.Correct == true) { Snackbar.Add($"To'\''g'\''ri! +{data.Points} ball!", Severity.Success); _dialogOpen = false; await OnInitializedAsync(); }
+        else Snackbar.Add("Noto'\''g'\''ri flag!", Severity.Warning);
+    }
+
+    private Color GetCatColor(string c) => c switch { "Web" => Color.Primary, "Crypto" => Color.Warning, "Pwn" => Color.Error, "Reversing" => Color.Secondary, _ => Color.Default };
+    private Color GetDiffColor(string d) => d switch { "Easy" => Color.Success, "Medium" => Color.Warning, "Hard" => Color.Error, _ => Color.Secondary };
+}

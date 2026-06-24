@@ -1,0 +1,74 @@
+﻿@page "/profile"
+@inject ApiService Api
+@inject AppState State
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@using HackZone.Web.Services
+
+<PageTitle>Profil - HackZone</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
+    @if (!State.IsAuthenticated) { Nav.NavigateTo("/login"); return; }
+
+    <MudText Typo="Typo.h4" Class="hz-green mb-6">&gt; Profil</MudText>
+
+    @if (_profile is null)
+    {
+        <MudProgressLinear Color="Color.Success" Indeterminate="true" />
+    }
+    else
+    {
+        <MudGrid Spacing="4">
+            <MudItem xs="12" md="4">
+                <MudCard Class="hz-card text-center pa-4">
+                    <MudAvatar Size="Size.Large" Style="width:80px;height:80px;font-size:2rem;background:#00ff41;color:#000;margin:0 auto">
+                        @_profile.Username.Substring(0, 1).ToUpper()
+                    </MudAvatar>
+                    <MudText Typo="Typo.h5" Class="mt-3">@_profile.Username</MudText>
+                    <MudText Class="hz-muted">@_profile.Email</MudText>
+                    <MudText Class="hz-green mt-2">@_profile.ReputationPoints ball</MudText>
+                    <MudStack Row="true" Justify="Justify.Center" Spacing="2" Class="mt-3">
+                        @foreach (var r in _profile.Roles)
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">@r</MudChip>
+                        }
+                    </MudStack>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="8">
+                <MudCard Class="hz-card">
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6" Class="mb-4">Profilni tahrirlash</MudText>
+                        <MudTextField @bind-Value="_fullName" Label="To'\''liq ism" Variant="Variant.Outlined" Class="mb-3" FullWidth="true" />
+                        <MudTextField @bind-Value="_bio" Label="Bio" Variant="Variant.Outlined" Class="mb-3" FullWidth="true" Lines="3" />
+                        <MudButton Color="Color.Success" Variant="Variant.Filled" OnClick="UpdateProfile" Disabled="_saving">
+                            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                            Saqlash
+                        </MudButton>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private UserProfile? _profile;
+    private string _fullName = "", _bio = "";
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = await Api.GetAsync<UserProfile>("api/auth/me");
+        if (_profile is not null) { _fullName = _profile.FullName ?? ""; _bio = _profile.Bio ?? ""; }
+    }
+
+    private async Task UpdateProfile()
+    {
+        _saving = true;
+        var (ok, err) = await Api.PostAsync("api/auth/profile", new { fullName = _fullName, bio = _bio });
+        _saving = false;
+        if (ok) Snackbar.Add("Profil yangilandi.", Severity.Success);
+        else Snackbar.Add(err ?? "Xato", Severity.Error);
+    }
+}

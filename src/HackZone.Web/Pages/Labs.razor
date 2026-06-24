@@ -1,0 +1,73 @@
+﻿@page "/labs"
+@inject ApiService Api
+@inject AppState State
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+@using HackZone.Web.Services
+
+<PageTitle>Laboratoriyalar - HackZone</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudText Typo="Typo.h4" Class="hz-green mb-6">&gt; Laboratoriyalar</MudText>
+
+    @if (!State.IsAuthenticated)
+    {
+        <MudAlert Severity="Severity.Warning">
+            Laboratoriyalardan foydalanish uchun <MudLink Href="/login" Color="Color.Warning">kiring</MudLink>.
+        </MudAlert>
+    }
+    else if (_loading)
+    {
+        <MudProgressLinear Color="Color.Success" Indeterminate="true" />
+    }
+    else
+    {
+        <MudGrid Spacing="3">
+            @foreach (var lab in _labs ?? [])
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Class="hz-card">
+                        <MudCardContent>
+                            <MudChip T="string" Color="GetDiffColor(lab.Difficulty)" Size="Size.Small">@lab.Difficulty</MudChip>
+                            <MudText Typo="Typo.h6" Class="mt-2">@lab.Title</MudText>
+                            <MudText Class="hz-muted mt-1">@lab.Description</MudText>
+                            <MudText Class="mt-2"><MudIcon Icon="@Icons.Material.Filled.Timer" Size="Size.Small" Class="mr-1" />@lab.ExpiryMinutes daqiqa</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Color="Color.Success" Variant="Variant.Filled"
+                                OnClick="() => StartLab(lab.Id)" Disabled="@(_starting == lab.Id)"
+                                StartIcon="@Icons.Material.Filled.PlayArrow">
+                                @if (_starting == lab.Id) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+                                Boshlash
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private List<LabItem>? _labs;
+    private bool _loading = true;
+    private Guid? _starting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!State.IsAuthenticated) { _loading = false; return; }
+        _labs = await Api.GetAsync<List<LabItem>>("api/labs");
+        _loading = false;
+    }
+
+    private async Task StartLab(Guid labId)
+    {
+        _starting = labId;
+        var (ok, data, err) = await Api.PostAsync<LabStarted>($"api/labs/{labId}/start", new { });
+        _starting = null;
+        if (ok && data != null) { Snackbar.Add("Lab ishga tushdi!", Severity.Success); Nav.NavigateTo(data.AccessUrl, forceLoad: true); }
+        else Snackbar.Add(err ?? "Lab ishga tushmadi", Severity.Error);
+    }
+
+    private Color GetDiffColor(string d) => d switch { "Easy" => Color.Success, "Medium" => Color.Warning, "Hard" => Color.Error, _ => Color.Secondary };
+}

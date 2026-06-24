@@ -1,0 +1,48 @@
+﻿@page "/leaderboard"
+@inject ApiService Api
+@using HackZone.Web.Services
+
+<PageTitle>Reyting - HackZone</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
+    <MudText Typo="Typo.h4" Class="hz-green mb-6">&gt; Reyting</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Color="Color.Success" Indeterminate="true" />
+    }
+    else
+    {
+        <MudTable Items="_leaders" Hover="true" Class="hz-table">
+            <HeaderContent>
+                <MudTh>#</MudTh>
+                <MudTh>Foydalanuvchi</MudTh>
+                <MudTh>Ball</MudTh>
+                <MudTh>Hal qilingan</MudTh>
+            </HeaderContent>
+            <RowTemplate Context="row">
+                <MudTd>
+                    @if (row.Rank <= 3)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="@(row.Rank == 1 ? Color.Warning : row.Rank == 2 ? Color.Default : Color.Error)" />
+                    }
+                    else { @row.Rank }
+                </MudTd>
+                <MudTd>@row.Username</MudTd>
+                <MudTd><span class="hz-green font-bold">@row.Score</span></MudTd>
+                <MudTd>@row.SolvedCount</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+    private List<LeaderItem>? _leaders;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _leaders = await Api.GetAsync<List<LeaderItem>>("api/ctf/leaderboard");
+        _loading = false;
+    }
+}

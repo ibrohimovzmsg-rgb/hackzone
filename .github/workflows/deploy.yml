@@ -1,0 +1,70 @@
+name: Deploy HackZone
+
+on:
+  push:
+    branches: [main]
+
+env:
+  VPS_HOST: 185.191.141.88
+  VPS_USER: root
+  DEPLOY_PATH: /opt/hackzone
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync source code to VPS
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            --exclude='.git' \
+            --exclude='**/bin' \
+            --exclude='**/obj' \
+            --exclude='**/.vs' \
+            ./ ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.DEPLOY_PATH }}/
+
+      - name: Build and restart containers
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << 'EOF'
+            set -e
+            cd /opt/hackzone
+
+            echo "Building API image..."
+            docker compose build hackzone-api
+
+            echo "Building Web image..."
+            docker compose build hackzone-web
+
+            echo "Restarting services..."
+            docker compose up -d --no-deps hackzone-api hackzone-web
+
+            echo "Cleaning up old images..."
+            docker image prune -f
+
+            echo "Deployment complete!"
+            docker ps --format "table {{.Names}}\t{{.Status}}"
+          EOF
+
+      - name: Health check
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ env.VPS_HOST }}/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check failed with status: $STATUS"
+            exit 1
+          fi
+          echo "Health check passed (HTTP $STATUS)"

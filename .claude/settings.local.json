@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:PATH = \"C:\\\\dotnet9;\" + $env:PATH; & \"C:\\\\dotnet9\\\\dotnet.exe\" --version)"
+    ]
+  }
+}

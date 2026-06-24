@@ -1,0 +1,100 @@
+﻿@inherits LayoutComponentBase
+@inject AuthService AuthSvc
+@inject AppState State
+@inject NavigationManager Nav
+@using HackZone.Web.Services
+
+<MudThemeProvider Theme="_theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Class="hz-appbar">
+        <MudIconButton Icon="@Icons.Material.Filled.Terminal" Color="Color.Success"
+            Href="/" Edge="Edge.Start" />
+        <MudText Typo="Typo.h6" Class="ml-2 hz-logo">HackZone</MudText>
+        <MudSpacer />
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudButton Href="/" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Home">Bosh sahifa</MudButton>
+            <MudButton Href="/courses" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.School">Kurslar</MudButton>
+            <MudButton Href="/ctf" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Flag">CTF</MudButton>
+            <MudButton Href="/labs" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Computer">Laboratoriya</MudButton>
+            <MudButton Href="/leaderboard" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Leaderboard">Reyting</MudButton>
+            <MudButton Href="/forum" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Forum">Forum</MudButton>
+        </MudHidden>
+        <MudSpacer />
+        @if (State.IsAuthenticated)
+        {
+            @if (State.IsAdmin)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Warning" Href="/admin" />
+            }
+            <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Success" AnchorOrigin="Origin.BottomRight">
+                <MudMenuItem Href="/profile">@State.Username</MudMenuItem>
+                <MudMenuItem Href="/certificates">Sertifikatlar</MudMenuItem>
+                <MudDivider />
+                <MudMenuItem OnClick="Logout" Icon="@Icons.Material.Filled.Logout">Chiqish</MudMenuItem>
+            </MudMenu>
+        }
+        else
+        {
+            <MudButton Href="/login" Variant="Variant.Outlined" Color="Color.Success" Class="mr-2">Kirish</MudButton>
+            <MudButton Href="/register" Variant="Variant.Filled" Color="Color.Success">Ro'\''yxatdan o'\''tish</MudButton>
+        }
+    </MudAppBar>
+
+    <MudMainContent Class="hz-main">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#00ff41",
+            Secondary = "#0080ff",
+            Background = "#0a0a0a",
+            Surface = "#111111",
+            AppbarBackground = "#0d0d0d",
+            DrawerBackground = "#111111",
+            TextPrimary = "#e0e0e0",
+            TextSecondary = "#888888",
+            ActionDefault = "#00ff41",
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#00ff41",
+            Secondary = "#0080ff",
+            Background = "#0a0a0a",
+            Surface = "#111111",
+            AppbarBackground = "#0d0d0d",
+            DrawerBackground = "#111111",
+            TextPrimary = "#e0e0e0",
+            TextSecondary = "#888888",
+        },
+    };
+
+    protected override void OnInitialized()
+    {
+        State.OnChange += StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AuthSvc.TryRestoreSessionAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task Logout()
+    {
+        await AuthSvc.LogoutAsync();
+        Nav.NavigateTo("/");
+    }
+
+    public void Dispose() => State.OnChange -= StateHasChanged;
+}
