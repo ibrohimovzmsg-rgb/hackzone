@@ -16,7 +16,8 @@ RUN dotnet publish "HackZone.Web/HackZone.Web.csproj" -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-RUN chown -R hackzone:hackzone /app
+RUN mkdir -p /app/.aspnet/DataProtection-Keys && \
+    chown -R hackzone:hackzone /app
 USER hackzone
 ENV ASPNETCORE_URLS=http://+:5001
 ENTRYPOINT ["dotnet", "HackZone.Web.dll"]
