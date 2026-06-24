@@ -31,9 +31,10 @@ jobs:
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             --exclude='.git' \
-            --exclude='**/bin' \
-            --exclude='**/obj' \
-            --exclude='**/.vs' \
+            --exclude='.claude' \
+            --exclude='**/bin/' \
+            --exclude='**/obj/' \
+            --exclude='**/.vs/' \
             ./ ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.DEPLOY_PATH }}/
 
       - name: Build and restart containers
