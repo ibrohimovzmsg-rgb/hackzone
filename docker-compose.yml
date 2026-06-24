@@ -83,6 +83,8 @@
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ApiBaseUrl: "http://hackzone-api:5000"
+    volumes:
+      - webkeys:/app/.aspnet/DataProtection-Keys
     networks:
       - hackzone-net
 
@@ -105,6 +107,7 @@ volumes:
   redisdata:
   miniodata:
   apilogs:
+  webkeys:
 
 networks:
   hackzone-net:

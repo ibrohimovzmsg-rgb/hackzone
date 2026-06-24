@@ -24,6 +24,7 @@ public class GetCoursesHandler(IUnitOfWork uow, ICurrentUserService currentUser)
             .Include(c => c.Enrollments)
             .Where(c => c.IsPublished)
             .OrderBy(c => c.OrderIndex)
+            .AsSplitQuery()
             .ToListAsync(ct);
 
         return courses.Select(c =>
