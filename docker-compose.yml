@@ -1,0 +1,111 @@
+﻿services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hackzone-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hackzone
+      POSTGRES_USER: hackzone_user
+      POSTGRES_PASSWORD: hackzone_pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hackzone_user -d hackzone"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hackzone-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: hackzone-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ""
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+    networks:
+      - hackzone-net
+
+  minio:
+    image: minio/minio:RELEASE.2022-10-24T18-35-07Z
+    container_name: hackzone-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: hackzone_minio
+      MINIO_ROOT_PASSWORD: HackZone_Minio_Secret_2024
+    volumes:
+      - miniodata:/data
+    ports:
+      - "9001:9001"
+    networks:
+      - hackzone-net
+
+  hackzone-api:
+    build:
+      context: .
+      dockerfile: src/HackZone.Api/Dockerfile
+    container_name: hackzone-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=hackzone;Username=hackzone_user;Password=hackzone_pass"
+      Jwt__Secret: "HackZone_Super_Secret_Key_2024_CyberSecurity_Academy_JWT_HS256"
+      Jwt__Issuer: "hackzone.uz"
+      Jwt__Audience: "hackzone.uz"
+      Redis__ConnectionString: "redis:6379"
+      Minio__Endpoint: "minio:9000"
+      Minio__AccessKey: "hackzone_minio"
+      Minio__SecretKey: "HackZone_Minio_Secret_2024"
+      App__WebUrl: "http://hackzone-web:5001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - apilogs:/app/logs
+    networks:
+      - hackzone-net
+
+  hackzone-web:
+    build:
+      context: .
+      dockerfile: src/HackZone.Web/Dockerfile
+    container_name: hackzone-web
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ApiBaseUrl: "http://hackzone-api:5000"
+    networks:
+      - hackzone-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: hackzone-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - hackzone-api
+      - hackzone-web
+    networks:
+      - hackzone-net
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  apilogs:
+
+networks:
+  hackzone-net:
+    driver: bridge
